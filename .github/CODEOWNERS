@@ -1,0 +1,4 @@
+# Every change needs a code owner's approval from someone other than its last
+# pusher. With one maintainer on each team, that approval comes from the other
+# side (CONTRIBUTING.md).
+* @cashucard/flash @cashucard/foxy
