@@ -9,14 +9,14 @@ This repository holds the draft specification for Cashu NFC cards: smart cards t
 
 ## Status
 
-Draft. The core describes protocol 2.1 as the reference implementation runs it on NXP JCOP4 cards. Profiles for the owner key, the clock and limits, and the NFC tag are specified in the reference implementation's [command reference](https://github.com/cashucard/cashucard/blob/main/spec/APDU.md) until they are written here.
+Draft. The reference implementation runs the core as written, on NXP JCOP4 cards. Profiles for the owner key, the clock and limits, and the NFC tag are specified in the reference implementation's [command reference](https://github.com/cashucard/cashucard/blob/main/spec/APDU.md) until they are written here.
 
 ## Implementations
 
-- [cashucard/cashucard](https://github.com/cashucard/cashucard): the Java Card applet, protocol 2.1, with a simulator, tools and an operator provisioner.
-- [Flash](https://github.com/lnflash) wallet and point-of-sale apps read, load and pay from 2.1 cards.
+- [cashucard/cashucard](https://github.com/cashucard/cashucard): the Java Card applet, with a simulator, tools and an operator provisioner.
+- [Flash](https://github.com/lnflash) wallet and point-of-sale apps read, load and pay from cards.
 
-The protocol grew out of the [Foxy](https://github.com/getfoxy/card) card's design, merged with Flash's work in protocol 2.0.
+The protocol grew out of the [Foxy](https://github.com/getfoxy/card) card's design, merged with Flash's work.
 
 ## Contributing
 

@@ -39,7 +39,7 @@ A reader selects the card's application by its full AID:
 | P2    | `00`                               |
 | Data  | `F0 43 41 53 48 55 43 41 52 44 01` |
 
-The AID is the proprietary RID byte `F0`, the ASCII string `CASHUCARD`, and `01`. The card answers two bytes, the protocol version: major `02` and a minor version. Any `02 xx` is this NUT. A minor version adds to the commands and fields of the versions before it, and a reader **MUST** accept any minor version it does not recognise.
+The AID is the proprietary RID byte `F0`, the ASCII string `CASHUCARD`, and `01`. The card answers two version bytes. A major byte of `02` identifies a card of this NUT. The minor byte counts additions to the commands and fields this NUT defines, and a reader **MUST** accept any minor byte it does not recognise.
 
 A reader **MUST** select the full AID. A selection by the first ten bytes alone can reach a different application on the same chip. A response to `SELECT` that is not exactly two bytes beginning `02` **MUST** be treated as no card of this NUT, and so **MUST** a `6A 82` status word.
 
@@ -76,7 +76,7 @@ A slot holds 82 bytes:
 | 45     | 33   | `C`, the mint's unblinded signature, a compressed point     |
 | 78     | 4    | date: the locktime in seconds, or `0` for a proof with none |
 
-A card of protocol 2.x has 128 slots, numbered 0 to 127. A keyset ID longer than 8 bytes is stored by its first 8. A reader **MUST** expand the stored bytes against the mint's keysets ([NUT-02][02]) and **MUST** refuse a proof whose 8 bytes match more than one keyset.
+A card has 128 slots, numbered 0 to 127. A keyset ID longer than 8 bytes is stored by its first 8. A reader **MUST** expand the stored bytes against the mint's keysets ([NUT-02][02]) and **MUST** refuse a proof whose 8 bytes match more than one keyset.
 
 ## Reading the card
 
@@ -273,7 +273,7 @@ Profiles **MAY** define further status words in the `6A 9X` range.
 
 ## Profiles
 
-Instructions `18`, `32` to `34`, `36`, `37`, `41` to `45` and `50` to `53` are assigned to profiles, which define them. The profiles of protocol 2.1 are:
+Instructions `18`, `32` to `34`, `36`, `37`, `41` to `45` and `50` to `53` are assigned to profiles, which define them. The profiles are:
 
 - **Owner**: a P-256 owner key that administers the card, with signed commands for the card's mint and unit, limits, PIN changes, loading grants, locking and reset.
 - **Clock and limits**: a daily limit, a per-payment limit and a no-PIN allowance, kept against a clock taken from Bitcoin block headers.
