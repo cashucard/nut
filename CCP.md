@@ -8,9 +8,9 @@
 
 ---
 
-This NUT specifies how a smart card holds Cashu proofs and spends them over NFC. The card makes a secp256k1 key pair at install and keeps the private key. Every proof on the card is locked to that key with [NUT-11][11] P2PK and the `SIG_ALL` flag. To pay, a reader (a point-of-sale terminal or a wallet) builds a [NUT-03][03] swap from the card's proofs, and the card signs the whole swap with one BIP-340 signature, marking each proof spent as it signs. The reader does not need to reach the mint while the card is present, and the card holder does not need a phone at the point of sale.
+This NUT specifies how a smart card holds Cashu proofs and spends them over NFC. The card makes a secp256k1 key pair at install and keeps the private key. Every proof on the card is locked to that key with [NUT-11][11] P2PK and the `SIG_ALL` flag. To pay, a reader (a point-of-sale terminal or a wallet) builds a [NUT-03][03] swap from the card's proofs, and the card signs the whole swap with one BIP-340 signature, marking each proof spent as it signs. The reader can prepare the swap while offline from the mint, and the card holder can pay without a phone at the point of sale.
 
-A mint needs no changes to accept card payments: a card payment is an ordinary swap of `SIG_ALL` proofs.
+Mints accept card payments as ordinary swaps of `SIG_ALL` proofs.
 
 This document specifies the core every card and reader share: selecting the card, the format of its proofs, reading them, paying, the card's own change, and loading proofs. How a card is administered (an owner key, a PIN's management, spending limits and a clock) is left to profiles, listed under [Profiles](#profiles).
 
@@ -57,7 +57,7 @@ A proof with a date also carries a locktime and the card's refund key ([NUT-11][
 ["P2PK",{"nonce":"<nonce>","data":"<P_card>","tags":[["locktime","<date>"],["refund","<refund key>"],["sigflag","SIG_ALL"]]}]
 ```
 
-The secret **MUST** be serialized exactly as shown: no whitespace, keys and tags in this order, `<nonce>` as 64 lowercase hex characters, `<P_card>` and `<refund key>` as 66 lowercase hex characters of a compressed point, and `<date>` in decimal. The card stores the nonce and the date and rebuilds the secret from them, so a reader cannot make the card sign any other text.
+The secret **MUST** be serialized exactly as shown: no whitespace, keys and tags in this order, `<nonce>` as 64 lowercase hex characters, `<P_card>` and `<refund key>` as 66 lowercase hex characters of a compressed point, and `<date>` in decimal. The card stores the nonce and date, then rebuilds and signs this prescribed secret text.
 
 [NUT-11][11] requires every input of a `SIG_ALL` swap to have the same `data` and tags. Card proofs share `data`, so the proofs of one payment **MUST** share the date and the refund key. The card refuses a payment that mixes them.
 
@@ -141,13 +141,13 @@ P1 is the first slot to report. P2 `00` returns one page of at most 255 bytes: t
 
 ### AUTH
 
-The reader sends 16 random bytes. The card answers 16 random bytes of its own and a BIP-340 signature by `P_card` over
+The reader sends 16 random bytes. The card answers with 16 random bytes of its own and a BIP-340 signature by `P_card` over
 
 ```
 SHA-256( T || T || reader_nonce || card_nonce || P_card ),  T = SHA-256("CashuCard/auth")
 ```
 
-with `P_card` compressed. A reader that verifies it knows the card present holds the key its proofs are locked to. No proof secret can hash to this message, so the signature spends nothing.
+with `P_card` compressed. A reader that verifies it knows the card present holds the key its proofs are locked to. The distinct tagged message authenticates possession of `P_card` without spending a proof.
 
 ## Paying
 
@@ -189,9 +189,11 @@ A card implementing this NUT:
 
 The card can make change for itself. For `SPEND_ALL_CHANGE` the card builds a card proof secret with a fresh nonce and the payment's date and refund key, computes `Y = hash_to_curve(secret)` ([NUT-00][00]), blinds it with a fresh `r`, and returns `B_ = Y + rG`. It keeps the opening until the change is back on the card. The change amount **MUST** be greater than 0 and at most the inputs' total (`6A 80`); the card answers `6A 84` when it has no room to keep another opening.
 
-The mint's swap response contains a blind signature `C_` for each change output. Whoever finishes the change unblinds it, `C = C_ - rK` with `K` the mint's key for that amount, and loads the proof with `LOAD_PROOF`. The change is locked to `P_card`, so only the card can spend it, whoever finishes it.
+The mint's swap response contains a blind signature `C_` for each change output. Whoever finishes the change unblinds it, `C = C_ - rK` with `K` the mint's key for that amount, and loads the proof with `LOAD_PROOF`. The card's change proof is locked to `P_card`, so the card can spend it regardless of who completes issuance.
 
 `GET_CHANGE` (INS `19`, P1 a page from 0) returns a count byte and up to three openings of 80 bytes: amount (4), keyset (8), date (4), nonce (32) and `r` (32). A wallet that missed the mint's response **MAY** recover `C_` with [NUT-09][09] restore, using the change outputs rebuilt from these openings.
+
+<a id="load_proof"></a>
 
 ## Loading proofs
 
@@ -215,7 +217,7 @@ Who may load is card policy ([Card policy](#card-policy)). A card **SHOULD** let
 
 ## DLEQ
 
-`GET_DLEQ` (INS `1A`) takes a slot in P1 and a second slot or `FF` in P2. For each slot asked it returns `01` and the 96 bytes `e || s || r` kept with an unspent proof, or `00`. The card does not check DLEQ proofs. A reader checks one by rebuilding the secret, computing `Y = hash_to_curve(secret)`, `C' = C + rK` and `B' = Y + rG`, and verifying [NUT-12][12] with the mint's key `K` for the amount. A valid DLEQ proof shows the mint signed the proof. It does not show the proof is unspent.
+`GET_DLEQ` (INS `1A`) takes a slot in P1 and a second slot or `FF` in P2. For each slot asked it returns `01` and the 96 bytes `e || s || r` kept with an unspent proof, or `00`. DLEQ validation is the reader's responsibility. The reader checks a proof by rebuilding the secret, computing `Y = hash_to_curve(secret)`, `C' = C + rK` and `B' = Y + rG`, and verifying [NUT-12][12] with the mint's key `K` for the amount. A valid DLEQ proof shows the mint signed the proof. The reader still needs to establish that the proof is unspent.
 
 ## Card policy
 
@@ -240,7 +242,7 @@ A reader that accepts a payment without reaching the mint:
 - **SHOULD** check `AUTH`;
 - **MUST** swap at the mint as soon as it can, and **MUST NOT** report the payment settled until the mint accepts the swap.
 
-The reader carries the risk that a proof was spent elsewhere before the card was presented. The card refuses to sign for a slot twice, but cannot stop a copy of a proof being spent elsewhere.
+The reader carries the risk that a proof was spent elsewhere before the card was presented. A copy of a proof can be spent elsewhere even though the card refuses to sign for a slot twice.
 
 ## Status words
 
@@ -288,7 +290,7 @@ A mint that supports [NUT-10][10], [NUT-11][11] with `SIG_ALL` on swaps, and [NU
 ## Security considerations
 
 - **The card signs only what it spends.** Every signature is a payment's, released in the same atomic write that marks its inputs spent, or the `AUTH` signature, whose tagged message no secret can equal.
-- **A reader cannot redirect the card's change.** Change outputs are locked to `P_card`.
+- **`P_card` locks the card's change outputs to the card.**
 - **A reader can direct the payment's other outputs.** The holder trusts the reader the card is presented to for the amount; card policy bounds what one reader can take.
 - **Offline acceptance carries double-spend risk** for the reader ([Accepting a payment offline](#accepting-a-payment-offline)).
 - **A lost card is lost money**, within whatever its card policy allows to a finder.

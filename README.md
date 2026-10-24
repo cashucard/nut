@@ -1,6 +1,6 @@
 # NUT-CCP: Cashu Card Protocol
 
-This repository holds the draft specification for Cashu NFC cards: smart cards that hold Cashu proofs and pay a reader with one tap, with the reader offline if need be. It is written as a Cashu NUT so it can be proposed to [cashubtc/nuts](https://github.com/cashubtc/nuts). Until the Cashu maintainers assign it a number, it is called NUT-CCP.
+This repository holds the draft specification for Cashu NFC cards: smart cards that hold Cashu proofs and pay a reader with one tap while the reader is offline. The card holder can pay without a phone at the point of sale. The specification is written as a Cashu NUT for proposal to [cashubtc/nuts](https://github.com/cashubtc/nuts). Until the Cashu maintainers assign it a number, it is called NUT-CCP.
 
 | File                                       | Contents                                                                  |
 | ------------------------------------------ | ------------------------------------------------------------------------- |
