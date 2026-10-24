@@ -57,7 +57,7 @@ A proof with a date also carries a locktime and the card's refund key ([NUT-11][
 ["P2PK",{"nonce":"<nonce>","data":"<P_card>","tags":[["locktime","<date>"],["refund","<refund key>"],["sigflag","SIG_ALL"]]}]
 ```
 
-The secret **MUST** be serialized exactly as shown: no whitespace, keys and tags in this order, `<nonce>` as 64 lowercase hex characters, `<P_card>` and `<refund key>` as 66 lowercase hex characters of a compressed point, and `<date>` in decimal. The card stores the nonce and date, then rebuilds and signs this prescribed secret text.
+The secret **MUST** be serialized exactly as shown: no whitespace, keys and tags in this order, `<nonce>` as 64 lowercase hex characters, `<P_card>` and `<refund key>` as 66 lowercase hex characters of a compressed point, and `<date>` in decimal. The card stores the nonce and date and rebuilds each secret with this serialization. Payment signatures follow the `SIG_ALL` transcript defined below.
 
 [NUT-11][11] requires every input of a `SIG_ALL` swap to have the same `data` and tags. Card proofs share `data`, so the proofs of one payment **MUST** share the date and the refund key. The card refuses a payment that mixes them.
 
@@ -147,7 +147,7 @@ The reader sends 16 random bytes. The card answers with 16 random bytes of its o
 SHA-256( T || T || reader_nonce || card_nonce || P_card ),  T = SHA-256("CashuCard/auth")
 ```
 
-with `P_card` compressed. A reader that verifies it knows the card present holds the key its proofs are locked to. The distinct tagged message authenticates possession of `P_card` without spending a proof.
+with `P_card` compressed. A reader that verifies it knows the card present holds the key its proofs are locked to. The distinct tagged message authenticates possession of the private key corresponding to `P_card` without spending a proof.
 
 ## Paying
 
@@ -217,7 +217,7 @@ Who may load is card policy ([Card policy](#card-policy)). A card **SHOULD** let
 
 ## DLEQ
 
-`GET_DLEQ` (INS `1A`) takes a slot in P1 and a second slot or `FF` in P2. For each slot asked it returns `01` and the 96 bytes `e || s || r` kept with an unspent proof, or `00`. DLEQ validation is the reader's responsibility. The reader checks a proof by rebuilding the secret, computing `Y = hash_to_curve(secret)`, `C' = C + rK` and `B' = Y + rG`, and verifying [NUT-12][12] with the mint's key `K` for the amount. A valid DLEQ proof shows the mint signed the proof. The reader still needs to establish that the proof is unspent.
+`GET_DLEQ` (INS `1A`) takes a slot in P1 and a second slot or `FF` in P2. For each slot asked it returns `01` and the 96 bytes `e || s || r` kept with an unspent proof, or `00`. DLEQ validation is the reader's responsibility. The reader checks a proof by rebuilding the secret, computing `Y = hash_to_curve(secret)`, `C' = C + rK` and `B' = Y + rG`, and verifying [NUT-12][12] with the mint's key `K` for the amount. A valid DLEQ proof shows the mint signed the proof. It does not show the proof is unspent.
 
 ## Card policy
 
