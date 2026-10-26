@@ -9,7 +9,7 @@ This repository holds the draft specification for Cashu NFC cards: smart cards t
 
 ## Status
 
-Draft. The reference implementation runs the core as written, on NXP JCOP4 cards. Profiles for the owner key, the clock and limits, and the NFC tag are specified in the reference implementation's [command reference](https://github.com/cashucard/cashucard/blob/main/spec/APDU.md) until they are written here.
+Draft and experimental. This proposal has had little outside review, and the only implementation tested on hardware is the reference one, on NXP JCOP4 cards, where it runs the core as written. Questions go to [Discussions](https://github.com/cashucard/cashucard/discussions) in cashucard/cashucard. Profiles for the owner key, the clock and limits, and the NFC tag are specified in the reference implementation's [command reference](https://github.com/cashucard/cashucard/blob/main/spec/APDU.md) until they are written here.
 
 ## Implementations
 
