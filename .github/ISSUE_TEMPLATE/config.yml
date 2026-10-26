@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Ask a question
+    url: https://github.com/cashucard/cashucard/discussions
+    about: Questions about NUT-CCP and its implementations go to Discussions in cashucard/cashucard. Proposed changes to the spec are issues or pull requests here.
+  - name: Report a vulnerability
+    url: https://github.com/cashucard/cashucard/security/advisories/new
+    about: Report security issues privately.
