@@ -273,3 +273,17 @@ The mint signs the change output with its key for 8. The reader unblinds `C = C_
   "load_proof_apdu": "b03000005100f1e4f5c2b1a09000000008f60f52083006f305833a08f2d7b9a94614665a29cae239f8af980e36252db4260253223d823a7ca34048f67abc6df1782f1c14e86c2aa0f1a16c5725ecc6a941ec0000000001"
 }
 ```
+
+## Spent-slot cleanup conformance
+
+These cases describe reader behavior. They do not change the payment preimage, signature or APDU encoding above. `A` and `B` name distinct proof identifiers reconstructed from the card's retained spent slots.
+
+| Card snapshot and mint observation                                                                                              | Reader behavior                                                                                                               |
+| ------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| No spent slots                                                                                                                  | Loading may use empty slots without sending `CLEAR_SPENT`.                                                                    |
+| Spent `A`; mint reports `A: UNSPENT` or `A: PENDING`                                                                            | Preserve `A`; do not clear.                                                                                                   |
+| Spent `A, B`; mint reports only `A: SPENT`                                                                                      | Incomplete coverage; do not clear.                                                                                            |
+| Spent `A, B`; mint returns duplicate `A` instead of `B`, an unrelated identifier or contradictory states                        | Invalid coverage; do not clear.                                                                                               |
+| Spent `A, B`; mint reports both `SPENT`, but card identity or any retained proof changes before cleanup                         | Discard the cleanup authorization and inspect again.                                                                          |
+| Spent `A, B`; the exact snapshot is revalidated and both mint states are `SPENT`                                                | Proof-slot cleanup may proceed under card policy. Preserve unresolved merchant-output and change-recovery records separately. |
+| Mint request fails, proof reconstruction fails or retained contents are malformed without a verified interrupted-cleanup record | Stop cleanup and preserve recovery evidence.                                                                                  |
