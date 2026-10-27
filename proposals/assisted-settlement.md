@@ -103,6 +103,15 @@ Reserve all required space before signing. A terminal omitting required journal
 metadata receives a refusal before any proof is consumed. Pending records cannot
 be evicted to admit another payment. Abandoned STAGING records are reclaimable.
 
+Every successful payment occupies a record until holder-authorized retirement,
+including a payment whose till settles immediately while online. An ordinary
+till response cannot retire it. Outbox capacity therefore limits the number of
+payments between holder-wallet contacts, independently of remaining proof slots.
+Measure and review both many-small-payment and large-payment workloads before
+choosing a capacity. A full outbox refuses payment before consumption and tells
+the holder to reconnect their wallet. Card-verifiable mint receipts would require
+a separately reviewed profile; ordinary HTTPS responses do not provide them.
+
 Stage the complete payload and both signatures outside the transaction. Publish
 COMMITTED with the existing irreversible consumption/burn marker in one atomic
 boundary. Before commit, staging signatures remain inaccessible through every
