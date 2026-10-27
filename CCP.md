@@ -215,6 +215,16 @@ Who may load is card policy ([Card policy](#card-policy)). A card **SHOULD** let
 
 `CLEAR_SPENT` (INS `31`) frees every spent slot and answers how many it freed. It is subject to the same policy as `LOAD_PROOF`.
 
+### Reclaiming spent slots
+
+A spent slot records that the card committed its proof to a payment. The mint may still report that proof as `UNSPENT` or `PENDING`, for example while the accepting terminal is offline. The retained proof and payment records may be needed to finish that payment.
+
+A reader **MUST NOT** send `CLEAR_SPENT` as an unconditional part of loading proofs. Before clearing, it **MUST** read every retained spent proof from the card, reconstruct each proof's secret and query its mint with [NUT-07][07]. Every proof **MUST** be reported as `SPENT`. A `PENDING` or `UNSPENT` result, an unavailable mint, an incomplete or contradictory response, or a proof the reader cannot reconstruct **MUST** prevent clearing. The response **MUST** cover exactly the requested proof identifiers.
+
+The reader **MUST** bind the check to the same card and proof contents before sending the clear. It **MUST** revalidate any snapshot obtained in an earlier card session. An empty terminal queue, a displayed zero balance or the card's own spent status **MUST NOT** substitute for mint verification. Because `CLEAR_SPENT` frees all spent slots, the check applies to all of them.
+
+Mint consumption of the inputs does not establish that the merchant recovered its outputs or that the card received its change. Implementations **MUST** preserve the original payment and output-recovery records while those obligations remain unresolved. Clearing proof slots **MUST NOT** be interpreted as permission to discard those records or change openings. A reader resuming its own interrupted cleanup **MUST** retain the verified cleanup scope and reconcile the card state; malformed contents alone are not mint settlement evidence.
+
 ## DLEQ
 
 `GET_DLEQ` (INS `1A`) takes a slot in P1 and a second slot or `FF` in P2. For each slot asked it returns `01` and the 96 bytes `e || s || r` kept with an unspent proof, or `00`. DLEQ validation is the reader's responsibility. The reader checks a proof by rebuilding the secret, computing `Y = hash_to_curve(secret)`, `C' = C + rK` and `B' = Y + rG`, and verifying [NUT-12][12] with the mint's key `K` for the amount. A valid DLEQ proof shows the mint signed the proof. It does not show the proof is unspent.
