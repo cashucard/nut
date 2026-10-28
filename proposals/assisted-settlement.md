@@ -187,10 +187,20 @@ The [compact codec prototype][compact-codec] matches the signed candidate vector
 and an independently materialized 128-input/128-output packet. It verifies both
 signatures before paged export. Its candidate budget admits 44 small synthetic
 payments after reserving context, registry, mappings and future identity bytes.
-The JavaCard conversion, complete setup, physical RAM/EEPROM cost, cryptographic
-latency and interrupted recovery remain validation gates.
+The [private JavaCard prototype][javacard-prototype] converts with the pinned
+3.0.5 SDK while preserving the original constructor and field layout. Its
+byte-backed pool implements uint64 identities, staging, publication/burn intent,
+streamed exports and resumable retirement. Simulator tests verify both signatures,
+mixed keysets, a 128-input/128-output packet and 45 small synthetic records. The
+count differs from the host budget because it reuses existing proof status bytes.
+Host-only interruption controls exercise publication and cleanup boundaries;
+physical RAM/EEPROM cost, combined allocation, rollback and signing/transfer
+latency still require chip measurements. Fixture loading and unsigned retirement
+are private bench interfaces; production authorization, load provenance, receipt
+and limit integration remain open.
 
 [compact-codec]: https://github.com/cashucard/cashucard/pull/203
+[javacard-prototype]: https://github.com/cashucard/cashucard/pull/204
 [resource-report]: https://github.com/cashucard/cashucard/blob/main/docs/reports/HARDWARE_TEST_REPORT_2026-10-28.j3r180-allocation-comparison.md
 [storage-model]: https://github.com/cashucard/cashucard/pull/202
 
