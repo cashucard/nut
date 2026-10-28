@@ -8,7 +8,7 @@ follow resource measurements and review. Implementation tracking:
 [local mint proof](https://github.com/cashucard/cashucard/pull/188),
 [merchant durability](https://github.com/lnflash/flash-pos/pull/96),
 [merchant recovery](https://github.com/lnflash/flash-pos/pull/97), and
-[resource probe](https://github.com/cashucard/cashucard/pull/189).
+[resource evidence](https://github.com/cashucard/cashucard/pull/201).
 
 ## Purpose and initial profile
 
@@ -158,6 +158,26 @@ retirements. Persist paid funding and its resulting proofs. On the second NFC
 session, revalidate installation, packet and slot generations, retire, confirm
 actual space, then load. Changed state preserves the paid top-up journal for
 later loading. The first inspection reserves no capacity.
+
+## Resource evidence
+
+The approved J3R180 resource comparison on card 09336320 reserved 256 bytes,
+4 KiB and 16 KiB in one fixed private image, published one 128-byte transaction
+per stage and verified blank cleanup. The [hardware report][resource-report]
+records the exact artifacts and the earlier creation refusals. The successful
+allocation and publication are measured floors; integrated setup, packet
+storage, descriptor signing and power-loss recovery remain open.
+
+The [host storage model][storage-model] checks hidden staging, publication/burn
+intent, generation-scoped retirement and resumable page release with injected
+cuts. Its assumed atomic transactions require later JavaCard and silicon
+validation. Complete expanded packets exceed its 16 KiB candidate budget for a
+128-input payment. Compact slot/keyset references and streamed canonical export
+remain the proposed direction. These results assign no production capacity or
+wire bytes.
+
+[resource-report]: https://github.com/cashucard/cashucard/blob/main/docs/reports/HARDWARE_TEST_REPORT_2026-10-28.j3r180-allocation-comparison.md
+[storage-model]: https://github.com/cashucard/cashucard/pull/202
 
 ## Remaining gates
 
