@@ -183,6 +183,14 @@ validation. Complete expanded packets exceed its 16 KiB candidate budget for a
 remain the proposed direction. These results assign no production capacity or
 wire bytes.
 
+The [compact codec prototype][compact-codec] matches the signed candidate vector
+and an independently materialized 128-input/128-output packet. It verifies both
+signatures before paged export. Its candidate budget admits 44 small synthetic
+payments after reserving context, registry, mappings and future identity bytes.
+The JavaCard conversion, complete setup, physical RAM/EEPROM cost, cryptographic
+latency and interrupted recovery remain validation gates.
+
+[compact-codec]: https://github.com/cashucard/cashucard/pull/203
 [resource-report]: https://github.com/cashucard/cashucard/blob/main/docs/reports/HARDWARE_TEST_REPORT_2026-10-28.j3r180-allocation-comparison.md
 [storage-model]: https://github.com/cashucard/cashucard/pull/202
 
