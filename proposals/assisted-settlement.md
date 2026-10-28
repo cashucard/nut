@@ -90,6 +90,13 @@ ID is `SHA256(body)`. The descriptor signs
 body. Verify both signatures against the authenticated card key. The distinct
 tag separates descriptor signatures from payments and ordinary AUTH.
 
+The [candidate vector](vectors/assisted-settlement-v1.json) uses packet format
+1, exact-payment profile 1 and sat unit 0 for codec experiments. It includes
+mixed 8/33-byte keysets and a payment ID above JavaScript's exact Number range.
+An independent Python encoder and the existing reference BIP-340 test signer
+produced its bytes and two signatures with the published test scalar 3. These
+prototype values remain subject to review before production assignments.
+
 On-card storage can retain slot references, registry references and compact
 outputs. Export materializes the canonical packet while streaming through
 existing scratch space. Cached packets retain the complete authenticated context.
