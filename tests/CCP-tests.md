@@ -1,6 +1,6 @@
 # NUT-CCP Test Vectors
 
-All values are hex unless noted. Each vector can be checked with BIP-340, SHA-256, the `hash_to_curve` of [NUT-00](https://github.com/cashubtc/nuts/blob/main/00.md) and the DLEQ proof of [NUT-12](https://github.com/cashubtc/nuts/blob/main/12.md). Every vector comes from the reference applet, protocol `02 03`.
+All values are hex unless noted. Each vector can be checked with BIP-340, SHA-256, the `hash_to_curve` of [NUT-00](https://github.com/cashubtc/nuts/blob/main/00.md) and the DLEQ proof of [NUT-12](https://github.com/cashubtc/nuts/blob/main/12.md). Every vector comes from the reference applet of revision `03`, protocol 3.0, which answers `SELECT` with `03 00`. No vector in this file carries the version bytes.
 
 ## Keys per load
 
@@ -588,6 +588,64 @@ The response is the slot (`02`), `01` for the DLEQ proof kept, and the slot's 81
 | P1 of an opening not owed                                 | `6A 88` |
 | the same `LOAD_CHANGE` again, after the first is answered | `6A 88` |
 | 193 bytes                                                 | `67 00` |
+
+## Refusals at `SPEND_ALL_SIGN`
+
+The shape a payment is signed in, as the reference applet answers it ([NUT-CCP](../CCP.md#paying)). In each refused case the payment is given up, nothing is burned, counted or written, and a read of the slots shows them unspent.
+
+| Case                                                                                                         | Status                        |
+| ------------------------------------------------------------------------------------------------------------ | ----------------------------- |
+| the card's change, 33 slots                                                                                  | `6A A0`                       |
+| the card's change, 17 outputs with the change                                                                | `6A A0`                       |
+| the card's change, an output of 0                                                                            | `6A A0`                       |
+| the card's change, 32 slots and 16 outputs with the change                                                   | signed                        |
+| no change of the card's, 33 slots                                                                            | signed                        |
+| a payment that waits (a second payment in the time in the field): an output after its first `SPEND_ALL_SIGN` | `69 85`                       |
+| a payment that waits: the card's change after its first `SPEND_ALL_SIGN`                                     | `69 85`                       |
+| a payment that waits, its change named before the first `SPEND_ALL_SIGN`                                     | `00 01`, then signed          |
+| `SPEND_ALL_SIGN` sent again after the signature was answered                                                 | `69 85`; the slots stay spent |
+| `VERIFY_PIN` between `SPEND_ALL_BEGIN` and `SPEND_ALL_SIGN`                                                  | `69 85`; the slots unspent    |
+
+The second-to-last row is why `69 85` alone never shows that nothing was burned.
+
+## Reader requirements conformance
+
+These cases describe reader behaviour ([NUT-CCP](../CCP.md#reader-requirements-what-the-cards-answers-do-not-prove)). They change nothing the card signs or answers. "Kept" means the reader keeps the obligation in lasting storage and reports it to its caller; "asked by digest" means `SPEND_ALL_AGAIN` P1 `01` with the SHA-256 of the payment's own message, at the card's later taps.
+
+After `SPEND_ALL_SIGN`:
+
+| What the reader sees                                                                                      | Reader behaviour                                                                                                                   |
+| --------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `6A 94` (or another of the nine words), and the slots read unspent in the same tap                        | The sale may be paid another way. The claim is kept and asked by digest.                                                           |
+| `6A 94`, and the slots read spent                                                                         | Kept: the answers contradict each other. Asked by digest, with the PIN where the holder gives it.                                  |
+| `69 85` to a `SPEND_ALL_SIGN` the reader sent again after an answer it did not see                        | Kept. Asked by digest at once.                                                                                                     |
+| no answer, an answer cut short, or a status word not among the nine                                       | Kept. Asked by digest in the same tap and later; no second payment of the sale from this card while the slots do not read unspent. |
+| `SPEND_ALL_AGAIN` P1 `00` answers a signature that does not verify over the reader's own message          | Another reader's payment. Not used; asked by digest.                                                                               |
+| `SPEND_ALL_AGAIN` P1 `01` answers `6A 88`, any number of times, and the mint answers the inputs `UNSPENT` | Kept.                                                                                                                              |
+| `SPEND_ALL_AGAIN` P1 `01` answers a signature that verifies, after the sale was paid another way          | The swap is made; the money is the holder's, returned to the card or held for it, and reported.                                    |
+| the mint answers every input `SPENT` and none of the claim's outputs restore, at separate times           | Reported as spent elsewhere, with its amount; the record kept and restore asked again at long intervals.                           |
+
+After the card's signature is had:
+
+| Mint's answers                                                                   | Reader behaviour                                                                     |
+| -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| HTTP `500`, `429`, a lost answer, or a code the reader does not know             | Not final. NUT-07 on the inputs, NUT-09 on the outputs.                              |
+| inputs `UNSPENT`                                                                 | The same signed swap posted again, with backoff.                                     |
+| inputs `SPENT`, outputs restored                                                 | Paid.                                                                                |
+| inputs `SPENT`, nothing restored, once or many times                             | Kept as not yet restored: a fault of the mint or the transport. Restore asked again. |
+| `11002` from a mint whose numbering the reader does not know                     | "Not balanced" or "pending": the inputs' state asked.                                |
+| the output keyset retired, another of the unit active with keys for every amount | The same outputs posted under the active keyset; the signature still holds.          |
+| no keyset of the unit active                                                     | Reported as a loss with its amount; the swap kept and tried again later.             |
+
+The card's own change, proofs and leftovers:
+
+| What the reader sees                                                                                          | Reader behaviour                                                                                            |
+| ------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `LOAD_CHANGE` answers `90 00`; a later read shows a slot whose nonce, date and `r` rebuild the opening's `B_` | The change is on the card.                                                                                  |
+| `LOAD_CHANGE` answers `90 00`; a later read shows no such slot, and the mint answers the change `UNSPENT`     | Owed again.                                                                                                 |
+| `GET_CHANGE` does not list the opening, or `LOAD_CHANGE` answers `6A 88` or `6A 94`, and no read proves it    | Still owed.                                                                                                 |
+| a slot whose `GET_DLEQ` proof is missing or does not verify                                                   | Not dropped. Paid alone, to the reader itself, if the holder wants it.                                      |
+| a price that no set of proofs pays exactly, at a mint that does not list NUT-12 and NUT-09                    | No change of the card's. A leftover written back under the PIN, which the holder may decline; else refused. |
 
 ## Spent-slot cleanup conformance
 
